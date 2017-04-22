@@ -14,9 +14,34 @@ public class PlayerController : MonoBehaviour
 
 	private Rigidbody2D _rb2d;
 
+	public LevelGenerator levelGen;
+	private float _levelUpdateFreq = 0.5f;
+	public int visibilityRange = 25;
+
 	void Start () 
 	{
 		_rb2d = GetComponent<Rigidbody2D>();
+
+		InvokeRepeating( "UpdateLevelVisibility", 0, _levelUpdateFreq);
+	}
+
+	void UpdateLevelVisibility()
+	{
+		int xPos = Mathf.FloorToInt(transform.position.x);
+		int yPos = Mathf.FloorToInt(transform.position.y);
+		int halfVisRange = Mathf.FloorToInt(visibilityRange*0.5f);
+		Vector2 pos;
+		for (int x = -halfVisRange; x < halfVisRange; x++)
+		{
+			for (int y = -halfVisRange; y < halfVisRange; y++)
+			{
+				pos = new Vector2(xPos+x, yPos+y);
+				if (Vector2.Distance(pos, new Vector2(xPos, yPos)) < halfVisRange)
+				{
+					levelGen.RevealMapForPosition(xPos+x, yPos+y);
+				}
+			}
+		}
 	}
 	
 	void FixedUpdate () 

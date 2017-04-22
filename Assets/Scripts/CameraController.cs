@@ -10,7 +10,7 @@ public class CameraController : MonoBehaviour
 	private float _moveSpeed = 12;
 
 	private float _minOrthSize = 5;
-	private float _maxOrthSize = 20;
+	private float _maxOrthSize = 50;
 
 	private Camera _cam;
 	private float _scrollInput;
