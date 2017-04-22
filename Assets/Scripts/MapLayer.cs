@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEditor;
 
 [System.Serializable]
 public class MapLayer : MonoBehaviour
@@ -35,7 +36,21 @@ public class MapLayer : MonoBehaviour
 		float currValue = 0;
 		for (int i = 0; i < curveValues.Length; i++)
 		{
-			currValue += curveValues[i].getValForType( x, y );
+			switch (curveValues[i].operationType)
+			{
+			case PositionValueWeight.OPERATION_TYPES.ADDITION:
+				currValue += curveValues[i].getValForType( x, y );
+				break;
+			case PositionValueWeight.OPERATION_TYPES.SUBTRACTION:
+				currValue -= curveValues[i].getValForType( x, y );
+				break;
+			case PositionValueWeight.OPERATION_TYPES.MULTIPLICATION:
+				currValue *= curveValues[i].getValForType( x, y );
+				break;
+			case PositionValueWeight.OPERATION_TYPES.DIVISION:
+				currValue /= curveValues[i].getValForType( x, y );
+				break;
+			}
 		}
 		return currValue;
 	}
@@ -71,18 +86,25 @@ public class PositionValueWeight
 {
 	public string name;
 
-	public enum TYPES {NONE, RANDOM, PERLIN, SIN, COS, XPOS, YPOS };
-	public TYPES type;
+	public enum TYPES {NONE, RANDOM, PERLIN, SINX, SINY, COSX, COSY, XPOS, YPOS };
+	public TYPES initializationType;
 	[Range(0,1)]
 	public float weighting = 1; //normalized value 0-1;
 	public AnimationCurve curve = AnimationCurve.Linear(0,0,1,1);
 	public MapLayer otherLayerVal;
 
+	public float perlinNoiseScale = 1;
+	public float perlinXOrg = 0;
+	public float perlinYOrg = 0;
+
+	public enum OPERATION_TYPES {ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION };
+	public OPERATION_TYPES operationType;
+
 	public float getValForType( int x, int y )
 	{
 		float curveVal = 0;
 
-		switch (type)
+		switch (initializationType)
 		{
 		case TYPES.NONE:
 			break;
@@ -90,13 +112,21 @@ public class PositionValueWeight
 			curveVal += Random.value;
 			break;
 		case TYPES.PERLIN:
-			curveVal += Random.value;
+			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * perlinNoiseScale);
+			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * perlinNoiseScale);
+			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
 			break;
-		case TYPES.SIN:
-			curveVal += Random.value;
+		case TYPES.SINX:
+			curveVal += Mathf.Sin(x);
 			break;
-		case TYPES.COS:
-			curveVal += Random.value;
+		case TYPES.SINY:
+			curveVal += Mathf.Sin(y);
+			break;
+		case TYPES.COSX:
+			curveVal += Mathf.Cos(x);
+			break;
+		case TYPES.COSY:
+			curveVal += Mathf.Cos(y);
 			break;
 		case TYPES.XPOS:
 			curveVal += (float)x/(float)LevelGenerator.LEVEL_WIDTH;
