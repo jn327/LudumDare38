@@ -52,6 +52,12 @@ public class MapLayer : MonoBehaviour
 		_validateTexture = true;
 	}
 
+	public void clearTextureForLevelPos ( int x, int y )
+	{
+		_texture.SetPixel(x, y, new Color(1,1,1,0));
+		_validateTexture = true;
+	}
+
 	public void ValidateTexture()
 	{
 		_texture.Apply();

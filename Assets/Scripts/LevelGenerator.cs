@@ -101,6 +101,10 @@ public class LevelGenerator : MonoBehaviour
 					{
 						_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
 					}
+					else
+					{
+						_mapLayers[i].clearTextureForLevelPos ( x, y );
+					}
 				}
 			}
 		}
