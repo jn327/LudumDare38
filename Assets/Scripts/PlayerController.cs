@@ -43,9 +43,9 @@ public class PlayerController : MonoBehaviour
 
 	void UpdateLevelVisibility()
 	{
-		int xPos = Mathf.FloorToInt(transform.position.x);
-		int yPos = Mathf.FloorToInt(transform.position.y);
-		int halfVisRange = Mathf.FloorToInt(_visibilityRange*0.5f);
+		int xPos = (int)(transform.position.x);
+		int yPos = (int)(transform.position.y);
+		int halfVisRange = (int)(_visibilityRange*0.5f);
 		Vector2 pos;
 		for (int x = -halfVisRange; x < halfVisRange; x++)
 		{

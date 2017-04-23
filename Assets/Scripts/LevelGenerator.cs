@@ -4,12 +4,30 @@ using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour 
 {
-	public const int LEVEL_WIDTH = 2048;
-	public const int LEVEL_HEIGHT = 2048;
+	public const int LEVEL_WIDTH = 64;
+	public const int LEVEL_HEIGHT = 64;
+	public const int SECTION_WIDTH = 128;
+	public const int SECTION_HEIGHT = 128;
 
 	public static LevelGenerator instance;
+	public LevelSection levelSectionPrefab;
+	[HideInInspector]
+	public LevelSection[,] sectionMap;
 
-	public LevelPosition[,] levelPositions;
+	//how far we have generated from 0,0.
+	private int _currGeneratedXMin = 0;
+	private int _currGeneratedXMax = 0;
+	private int _currGeneratedYMin = 0;
+	private int _currGeneratedYMax = 0;
+
+	//How far off the currentMin before we start generating adjacent section(s).
+	private int _sectionPadding = 256;
+
+	public GameObject playerPrefab;
+	[HideInInspector]
+	private PlayerController player;
+
+	public CameraController camController;
 
 	//	TODO : HEIGHT
 	//		http://mapsof.net/the-world/elevation
@@ -24,14 +42,8 @@ public class LevelGenerator : MonoBehaviour
 	//	TODO RAINFALL
 	//		http://go.grolier.com/map?id=mtlr080&pid=go
 	// temperature map (75%) - perlin (25%)
-	private MapLayer[] _mapLayers;
-
-	public GameObject playerPrefab;
-	private PlayerController player;
-
-	public CameraController camController;
-
-	private Stack mapRevealQueue; //TODO:!:!?
+	[HideInInspector]
+	public MapLayer[] mapLayers;
 
 	private void Awake()
 	{
@@ -46,109 +58,115 @@ public class LevelGenerator : MonoBehaviour
 	// Use this for initialization
 	void Start () 
 	{
-		_mapLayers = GetComponentsInChildren<MapLayer>(); 
-		for (int i = 0; i < _mapLayers.Length; i++)
+		sectionMap = new LevelSection[LEVEL_WIDTH, LEVEL_HEIGHT];
+		for (int x = 0; x < LEVEL_WIDTH; x ++ )
 		{
-			_mapLayers[i].init(LEVEL_WIDTH, LEVEL_HEIGHT);
-			_mapLayers[i].index = i;
+			for (int y = 0; y < LEVEL_HEIGHT; y ++ )
+			{
+				sectionMap[x,y] = null;
+			}
 		}
 
-		levelPositions = new LevelPosition[LEVEL_WIDTH,LEVEL_HEIGHT];
-
-		float normalX = 0.5f;
-		float normalY = 0.5f;
+		mapLayers = GetComponentsInChildren<MapLayer>(); 
+		for (int i = 0; i < mapLayers.Length; i++)
+		{
+			mapLayers[i].init();
+			mapLayers[i].index = i;
+		}
+		
 		if (player == null)
 		{
-			player = Instantiate(playerPrefab, new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0), Quaternion.identity).GetComponent<PlayerController>();
-		}
-		else
-		{
-			player.transform.position = new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0);
+			player = Instantiate(playerPrefab, new Vector3((LEVEL_WIDTH * SECTION_WIDTH) * 0.5f, (LEVEL_HEIGHT * SECTION_HEIGHT) * 0.5f, 0), Quaternion.identity).GetComponent<PlayerController>();
 		}
 		player.levelGen = this;
 		camController.target = player;
 		camController.sendOrthSizeToTarget();
 		camController.gameObject.transform.position = player.transform.position;
 
-		generateMap();
-
-		//TODO: Should we go ahead and generate a 2d mesh & collider based on heightmap
-		
-	}
-
-	public void Update()
-	{
-		//TODO: Maybe check this less frequently?
-		for (int i = 0; i < _mapLayers.Length; i++)
-		{
-			if (_mapLayers[i].isActiveAndEnabled)
-			{
-				_mapLayers[i].UpdateTexture();
-			}
-		}
-	}
-
-	public void generateMap ()
-	{
-		LevelPosition levelPos;
-		for (int x = 0; x < LEVEL_WIDTH; x ++ )
-		{
-			for (int y = 0; y < LEVEL_HEIGHT; y ++ )
-			{
-				levelPos = levelPositions[x,y] = new LevelPosition();
-				levelPos.layerValues = new float[_mapLayers.Length];
-				for (int i = 0; i < _mapLayers.Length; i++)
-				{
-					levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
-
-					if (_mapLayers[i].revealAtStart == true && _mapLayers[i].isActiveAndEnabled)
-					{
-						_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
-					}
-					else
-					{
-						_mapLayers[i].clearTextureForLevelPos ( x, y );
-					}
-				}
-			}
-		}
 	}
 
 	public float getMapLayerValueAtPos( int x, int y, int layerIndex )
 	{
-		return levelPositions[x,y].layerValues[layerIndex];
+		int xSectionIndex = x/SECTION_WIDTH;
+		int ySectionIndex = y/SECTION_HEIGHT;
+		LevelSection section = sectionMap[xSectionIndex,ySectionIndex];
+		return section.getMapLayerValueAtPos( x, y, layerIndex);
 	}
-	
+
 	public void RevealMapForPosition ( int x, int y )
 	{
-		if (x >= LEVEL_WIDTH || y >= LEVEL_HEIGHT
-			|| x < 0 || y < 0 ) 
+		/*
+		//TODO: CORNERS - 8 dir
+		if ( x - _sectionPadding < _currGeneratedXMin )
 		{
-			//Debug.Log("no map to show at "+x+", "+y); 
-			return;
+			//TODO: Generate a section to the left
+			_currGeneratedXMin -= SECTION_WIDTH;
+		}
+		if ( x + _sectionPadding < _currGeneratedXMax )
+		{
+			//TODO: Generate a section to the right....
+			_currGeneratedXMax += SECTION_WIDTH;
+		}
+		if ( y - _sectionPadding < _currGeneratedYMin )
+		{
+			//TODO: Generate a section to the bottom....
+			_currGeneratedYMin -= SECTION_HEIGHT;
+		}
+		if ( y + _sectionPadding < _currGeneratedYMax )
+		{
+			//TODO: Generate a section to the top....
+			_currGeneratedYMax += SECTION_HEIGHT;
+		}*/
+
+		//TODO: Figure out which section x and y are in and update it.
+		int xSectionIndex = x/SECTION_WIDTH;
+		int ySectionIndex = y/SECTION_HEIGHT;
+		LevelSection section = sectionMap[xSectionIndex,ySectionIndex];
+
+		//Debug.Log(">===============================================<");
+		//Debug.Log(xSectionIndex+", " + ySectionIndex);
+		//Debug.Log(((float)x/((float)LEVEL_WIDTH * (float)SECTION_WIDTH))+", " + ((float)y/((float)LEVEL_HEIGHT* (float)SECTION_HEIGHT)));
+		//Debug.Log(x+", " + y);
+		//Debug.Log((x - (xSectionIndex*SECTION_WIDTH))+", " + (y -(ySectionIndex*SECTION_HEIGHT)));
+		//Debug.Log("<===============================================>");
+		//Debug.Break();
+
+		if (section == null)
+		{
+			section = generateSectionAt(x, y, xSectionIndex, ySectionIndex);
 		}
 
-		LevelPosition levelPos = levelPositions[x,y];
-
-		//lets not do anything if this position is visible
-		if (levelPos.isVisible == true) 
-			return;
-		
-		levelPos.isVisible = true;
-
-		for (int i = 0; i < _mapLayers.Length; i++)
-		{
-			//TODO: ART: DRAW A LINE OR a sea pixel or SOMETHING !!!!
-			_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
-		}
+		int localX = (x - (xSectionIndex*SECTION_WIDTH));
+		int localY = (y -(ySectionIndex*SECTION_HEIGHT));
+		section.RevealMapForPosition(localX, localY);
 	}
-}
 
-[System.Serializable]
-public class LevelPosition
-{
-	public bool isVisible = false;
+	private LevelSection generateSectionAt( int x, int y, int xIndex, int yIndex )
+	{
+		LevelSection section = Instantiate(levelSectionPrefab, new Vector3(xIndex * SECTION_WIDTH, yIndex * SECTION_HEIGHT, transform.position.z), Quaternion.identity).GetComponent<LevelSection>();
 
-	public float[] layerValues;
+		sectionMap[xIndex,yIndex] = section;
+
+		if (x < _currGeneratedXMin)
+		{
+			_currGeneratedXMin = x - (int)(SECTION_WIDTH * 0.5f);
+		}
+		if (x > _currGeneratedXMax)
+		{
+			_currGeneratedXMax = x + (int)(SECTION_WIDTH * 0.5f);
+		}
+		if (y < _currGeneratedYMin)
+		{
+			_currGeneratedYMin = y - (int)(SECTION_HEIGHT * 0.5f);
+		}
+		if (y > _currGeneratedYMax)
+		{
+			_currGeneratedYMax = y + (int)(SECTION_HEIGHT * 0.5f);
+		}
+
+		section.init( xIndex, yIndex );
+
+		return section;
+	}
 }
 

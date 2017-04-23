@@ -12,77 +12,40 @@ public class MapLayer : MonoBehaviour
 	public PositionValueWeight[] curveValues;
 	public Gradient colorGradient;
 
-	private SpriteRenderer _spriteRenderer;
-	private Texture2D _texture;
-	private bool _validateTexture = false;
-
 	public bool revealAtStart = false;
 
-	public void init( int levelWidth, int levelHeight)
+	public void init( )
 	{
-		_spriteRenderer = GetComponent<SpriteRenderer>();
-
-		_texture = new Texture2D(levelWidth, levelHeight, TextureFormat.RGBA32, false);
-
-		_spriteRenderer.sprite = Sprite.Create (_texture, new Rect(0,0,levelWidth,levelHeight), new Vector2(0,0), 1);
-
-		_spriteRenderer.material.name = name + "_sprite";
-		_spriteRenderer.material.mainTexture = _texture as Texture;
-		_spriteRenderer.material.shader = Shader.Find ("Sprites/Default");
-
 		for (int i = 0; i < curveValues.Length; i++)
 		{
 			curveValues[i].init();
 		}
 	}
 
-	public float GenerateValueForPos( int x, int y )
+	public float GenerateValueForPos( int x, int y, int xOffset, int yOffset )
 	{
 		float currValue = 0;
+		float valueForType;
 		for (int i = 0; i < curveValues.Length; i++)
 		{
+			valueForType = curveValues[i].getValForType( x, y, xOffset, yOffset );
 			switch (curveValues[i].operationType)
 			{
 			case PositionValueWeight.OPERATION_TYPES.ADDITION:
-				currValue += curveValues[i].getValForType( x, y );
+				currValue += valueForType;
 				break;
 			case PositionValueWeight.OPERATION_TYPES.SUBTRACTION:
-				currValue -= curveValues[i].getValForType( x, y );
+				currValue -= valueForType;
 				break;
 			case PositionValueWeight.OPERATION_TYPES.MULTIPLICATION:
-				currValue *= curveValues[i].getValForType( x, y );
+				currValue *= valueForType;
 				break;
 			case PositionValueWeight.OPERATION_TYPES.DIVISION:
-				currValue /= curveValues[i].getValForType( x, y );
+				currValue /= valueForType;
 				break;
 			}
 		}
 		return currValue;
-	}
-
-	public void UpdateTexture()
-	{
-		if (_validateTexture == true)
-			ValidateTexture();
-	}
-
-	public void setTextureForLevelPos( float gradientVal, int x, int y )
-	{
-		_texture.SetPixel(x, y, colorGradient.Evaluate(gradientVal));
-		_validateTexture = true;
-	}
-
-	public void clearTextureForLevelPos ( int x, int y )
-	{
-		_texture.SetPixel(x, y, new Color(1,1,1,0));
-		_validateTexture = true;
-	}
-
-	public void ValidateTexture()
-	{
-		_texture.Apply();
-		_spriteRenderer.material.mainTexture = _texture as Texture;
-		_validateTexture = false;
 	}
 }
 
@@ -107,12 +70,12 @@ public class PositionValueWeight
 	public enum OPERATION_TYPES {ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION };
 	public OPERATION_TYPES operationType;
 
-	public void init()
+	public void init( )
 	{
 		_perlinNoiseScale = Random.Range(perlinNoiseScaleMin, perlinNoiseScaleMax);
 	}
 
-	public float getValForType( int x, int y )
+	public float getValForType( int x, int y, int xOffset, int yOffset )
 	{
 		float curveVal = 0;
 
@@ -125,8 +88,8 @@ public class PositionValueWeight
 		}
 		else if (initializationType == TYPES.PERLIN)
 		{
-			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
-			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
+			float xCoord = perlinXOrg + (((float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float yCoord = perlinYOrg + (((float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
 			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
 		}
 		else if (initializationType == TYPES.SINX)
@@ -147,25 +110,27 @@ public class PositionValueWeight
 		}
 		else if (initializationType == TYPES.XPOS)
 		{
-			curveVal += (float)x/(float)LevelGenerator.LEVEL_WIDTH;
+			curveVal += (float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
 		}
 		else if (initializationType == TYPES.YPOS)
 		{
-			curveVal += (float)y/(float)LevelGenerator.LEVEL_HEIGHT;
+			curveVal += (float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
 		}
 		else if (initializationType == TYPES.PERLINXPOS)
 		{
-			curveVal += curve.Evaluate((float)x/(float)LevelGenerator.LEVEL_WIDTH);
-			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
-			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
-			curveVal *= Mathf.PerlinNoise(xCoord, yCoord);
+			float sectionXNormal = (float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
+			float xCoord = perlinXOrg + (sectionXNormal * _perlinNoiseScale);
+			float yCoord = perlinYOrg + (((float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
+			curveVal *= curve.Evaluate(sectionXNormal);
 		}
 		else if (initializationType == TYPES.PERLINYPOS)
 		{
-			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
-			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
+			float sectionYNormal = (float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
+			float xCoord = perlinXOrg + (((float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float yCoord = perlinYOrg + (sectionYNormal * _perlinNoiseScale);
 			curveVal += Mathf.PerlinNoise(yCoord, xCoord);
-			curveVal *= curve.Evaluate((float)y/(float)LevelGenerator.LEVEL_HEIGHT);
+			curveVal *= curve.Evaluate(sectionYNormal); 
 		}
 
 		if (otherLayerVal != null)
