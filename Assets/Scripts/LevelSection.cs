@@ -4,27 +4,27 @@ using UnityEngine;
 
 public class LevelSection : MonoBehaviour 
 {
-	public LevelPosition[,] levelPositions;
 	[HideInInspector]
 	public SectionLayer[] layers;
 	public GameObject layerPrefab;
+
+	private int _xIndex;
+	private int _yIndex;
 	
 	public void init ( int xIndex, int yIndex )
 	{
+		_xIndex = xIndex;
+		_yIndex = yIndex;
+
 		int numLayers = LevelGenerator.instance.mapLayers.Length;
 		layers = new SectionLayer[numLayers];
 		for (int i =0; i < numLayers; i++)
 		{
-			if (LevelGenerator.instance.mapLayers[i].isActiveAndEnabled)
-			{
-				layers[i] = Instantiate(layerPrefab, transform.position, Quaternion.identity, transform).GetComponent<SectionLayer>();
-				layers[i].init(LevelGenerator.instance.mapLayers[i].colorGradient);
-			}
+			layers[i] = Instantiate(layerPrefab, transform.position, Quaternion.identity, transform).GetComponent<SectionLayer>();
+			layers[i].init(i);
 		}
 
-		levelPositions = new LevelPosition[LevelGenerator.SECTION_WIDTH,LevelGenerator.SECTION_HEIGHT];
-
-		generateMap(xIndex, yIndex);
+		generateMap();
 	}
 
 	public void Update()
@@ -32,14 +32,11 @@ public class LevelSection : MonoBehaviour
 		//TODO: Maybe check this less frequently?
 		for (int i = 0; i < layers.Length; i++)
 		{
-			if (layers[i].isActiveAndEnabled)
-			{
-				layers[i].UpdateTexture();
-			}
+			layers[i].UpdateTexture();
 		}
 	}
 
-	public void generateMap ( int xIndex, int yIndex )
+	public void generateMap ( )
 	{
 		LevelPosition levelPos;
 		MapLayer mapLayer;
@@ -47,19 +44,21 @@ public class LevelSection : MonoBehaviour
 		{
 			for (int y = 0; y < LevelGenerator.SECTION_HEIGHT; y ++ )
 			{
-				levelPos = levelPositions[x,y] = new LevelPosition();
-				levelPos.layerValues = new float[layers.Length];
+				//levelPos = levelPositions[x,y] = new LevelPosition();
+				//levelPos.layerValues = new float[layers.Length];
 				for (int i = 0; i < layers.Length; i++)
 				{
 					mapLayer = LevelGenerator.instance.mapLayers[i];
-					levelPos.layerValues[i] = mapLayer.GenerateValueForPos(x, y, xIndex * LevelGenerator.SECTION_WIDTH, yIndex * LevelGenerator.SECTION_HEIGHT);
 
-					if (mapLayer.revealAtStart == true && mapLayer.isActiveAndEnabled)
+					if (mapLayer.revealAtStart == true)
 					{
-						layers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
+						float posValue = mapLayer.GenerateValueForPos(x + _xIndex * LevelGenerator.SECTION_WIDTH, y + _yIndex * LevelGenerator.SECTION_HEIGHT);
+						layers[i].setLayerValue ( x, y, posValue);
+						layers[i].setTextureForLevelPos( x, y );
 					}
 					else
 					{
+						layers[i].setLayerValue ( x, y, float.NaN);
 						layers[i].clearTextureForLevelPos ( x, y );
 					}
 				}
@@ -69,7 +68,12 @@ public class LevelSection : MonoBehaviour
 	
 	public float getMapLayerValueAtPos( int x, int y, int layerIndex )
 	{
-		return levelPositions[x,y].layerValues[layerIndex];
+		LevelPosition levelPos = layers[layerIndex].levelPositions[x,y];
+		if ( float.IsNaN(levelPos.layerValue) )
+		{
+			levelPos.layerValue = LevelGenerator.instance.mapLayers[layerIndex].GenerateValueForPos(x + _xIndex * LevelGenerator.SECTION_WIDTH, y + _yIndex * LevelGenerator.SECTION_HEIGHT);
+		}
+		return levelPos.layerValue;
 	}
 
 	public void RevealMapForPosition ( int x, int y )
@@ -81,18 +85,28 @@ public class LevelSection : MonoBehaviour
 			return;
 		}
 
-		LevelPosition levelPos = levelPositions[x,y];
-
-		//lets not do anything if this position is visible
-		if (levelPos.isVisible == true) 
-			return;
-
-		levelPos.isVisible = true;
-
+		MapLayer mapLayer;
 		for (int i = 0; i < layers.Length; i++)
 		{
-			//TODO: ART: DRAW A LINE OR a sea pixel or SOMETHING !!!!
-			layers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
+			LevelPosition levelPos = layers[i].levelPositions[x,y];
+
+			//lets not do anything if this position is visible
+			if (levelPos.isVisible == true) 
+				return;
+
+			levelPos.isVisible = true;
+
+
+			mapLayer = LevelGenerator.instance.mapLayers[i];
+			if ( mapLayer.revealAtStart != true )
+			{
+				if ( float.IsNaN(levelPos.layerValue) )
+				{
+					levelPos.layerValue = mapLayer.GenerateValueForPos(x + _xIndex * LevelGenerator.SECTION_WIDTH, y + _yIndex * LevelGenerator.SECTION_HEIGHT);
+				}
+
+				layers[i].setTextureForLevelPos( x, y );
+			}
 		}
 	}
 }
@@ -101,6 +115,5 @@ public class LevelSection : MonoBehaviour
 public class LevelPosition
 {
 	public bool isVisible = false;
-
-	public float[] layerValues;
+	public float layerValue;
 }

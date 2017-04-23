@@ -22,13 +22,13 @@ public class MapLayer : MonoBehaviour
 		}
 	}
 
-	public float GenerateValueForPos( int x, int y, int xOffset, int yOffset )
+	public float GenerateValueForPos( int x, int y )
 	{
 		float currValue = 0;
 		float valueForType;
 		for (int i = 0; i < curveValues.Length; i++)
 		{
-			valueForType = curveValues[i].getValForType( x, y, xOffset, yOffset );
+			valueForType = curveValues[i].getValForType( x, y );
 			switch (curveValues[i].operationType)
 			{
 			case PositionValueWeight.OPERATION_TYPES.ADDITION:
@@ -75,7 +75,7 @@ public class PositionValueWeight
 		_perlinNoiseScale = Random.Range(perlinNoiseScaleMin, perlinNoiseScaleMax);
 	}
 
-	public float getValForType( int x, int y, int xOffset, int yOffset )
+	public float getValForType( int x, int y )
 	{
 		float curveVal = 0;
 
@@ -88,8 +88,8 @@ public class PositionValueWeight
 		}
 		else if (initializationType == TYPES.PERLIN)
 		{
-			float xCoord = perlinXOrg + (((float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
-			float yCoord = perlinYOrg + (((float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float xCoord = perlinXOrg + (((float)x / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float yCoord = perlinYOrg + (((float)y  / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
 			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
 		}
 		else if (initializationType == TYPES.SINX)
@@ -110,24 +110,24 @@ public class PositionValueWeight
 		}
 		else if (initializationType == TYPES.XPOS)
 		{
-			curveVal += (float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
+			curveVal += (float)x / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
 		}
 		else if (initializationType == TYPES.YPOS)
 		{
-			curveVal += (float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
+			curveVal += (float)y / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
 		}
 		else if (initializationType == TYPES.PERLINXPOS)
 		{
-			float sectionXNormal = (float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
+			float sectionXNormal = (float)x / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH); //TODO: Offset based on section pos
 			float xCoord = perlinXOrg + (sectionXNormal * _perlinNoiseScale);
-			float yCoord = perlinYOrg + (((float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float yCoord = perlinYOrg + (((float)y / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT)) * _perlinNoiseScale); //TODO: Offset based on section pos
 			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
 			curveVal *= curve.Evaluate(sectionXNormal);
 		}
 		else if (initializationType == TYPES.PERLINYPOS)
 		{
-			float sectionYNormal = (float)(y + yOffset) / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
-			float xCoord = perlinXOrg + (((float)(x + xOffset) / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
+			float sectionYNormal = (float)y / (float)(LevelGenerator.SECTION_HEIGHT * LevelGenerator.LEVEL_HEIGHT); //TODO: Offset based on section pos
+			float xCoord = perlinXOrg + (((float)x / (float)(LevelGenerator.SECTION_WIDTH * LevelGenerator.LEVEL_WIDTH)) * _perlinNoiseScale); //TODO: Offset based on section pos
 			float yCoord = perlinYOrg + (sectionYNormal * _perlinNoiseScale);
 			curveVal += Mathf.PerlinNoise(yCoord, xCoord);
 			curveVal *= curve.Evaluate(sectionYNormal); 

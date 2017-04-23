@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour 
 {
-	public const int LEVEL_WIDTH = 64;
-	public const int LEVEL_HEIGHT = 64;
-	public const int SECTION_WIDTH = 128;
-	public const int SECTION_HEIGHT = 128;
+	public const int LEVEL_WIDTH = 8;
+	public const int LEVEL_HEIGHT = 8;
+	public const int SECTION_WIDTH = 1024;
+	public const int SECTION_HEIGHT = 1024;
 
 	public static LevelGenerator instance;
 	public LevelSection levelSectionPrefab;
@@ -137,13 +137,16 @@ public class LevelGenerator : MonoBehaviour
 		}
 
 		int localX = (x - (xSectionIndex*SECTION_WIDTH));
-		int localY = (y -(ySectionIndex*SECTION_HEIGHT));
-		section.RevealMapForPosition(localX, localY);
+		int localY = (y - (ySectionIndex*SECTION_HEIGHT));
+		section.RevealMapForPosition(localX, localY );
 	}
 
 	private LevelSection generateSectionAt( int x, int y, int xIndex, int yIndex )
 	{
-		LevelSection section = Instantiate(levelSectionPrefab, new Vector3(xIndex * SECTION_WIDTH, yIndex * SECTION_HEIGHT, transform.position.z), Quaternion.identity).GetComponent<LevelSection>();
+		//LevelSection section = Instantiate(levelSectionPrefab, new Vector3(xIndex * SECTION_WIDTH, yIndex * SECTION_HEIGHT, transform.position.z), Quaternion.identity).GetComponent<LevelSection>();
+
+		LevelSection section = Instantiate(levelSectionPrefab, new Vector3((xIndex * SECTION_WIDTH) + (SECTION_WIDTH * 0.5f), (yIndex * SECTION_HEIGHT) + (SECTION_HEIGHT * 0.5f), transform.position.z), Quaternion.identity).GetComponent<LevelSection>();
+		section.transform.localScale = new Vector3(SECTION_WIDTH,SECTION_HEIGHT,1);
 
 		sectionMap[xIndex,yIndex] = section;
 
