@@ -99,15 +99,18 @@ public class LevelGenerator : MonoBehaviour
 				levelPos.layerValues = new float[_mapLayers.Length];
 				for (int i = 0; i < _mapLayers.Length; i++)
 				{
-					levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
+					if (_mapLayers[i].isActiveAndEnabled)
+					{
+						levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
 
-					if (_mapLayers[i].revealAtStart == true && _mapLayers[i].isActiveAndEnabled)
-					{
-						_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
-					}
-					else
-					{
-						_mapLayers[i].clearTextureForLevelPos ( x, y );
+						if (_mapLayers[i].revealAtStart == true)
+						{
+							_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
+						}
+						else
+						{
+							_mapLayers[i].clearTextureForLevelPos ( x, y );
+						}
 					}
 				}
 			}

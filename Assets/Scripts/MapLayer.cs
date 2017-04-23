@@ -155,10 +155,11 @@ public class PositionValueWeight
 		}
 		else if (initializationType == TYPES.PERLINXPOS)
 		{
-			curveVal += curve.Evaluate((float)x/(float)LevelGenerator.LEVEL_WIDTH);
 			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
 			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
-			curveVal *= Mathf.PerlinNoise(xCoord, yCoord);
+			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
+			curveVal *= curve.Evaluate((float)x/(float)LevelGenerator.LEVEL_WIDTH);
+
 		}
 		else if (initializationType == TYPES.PERLINYPOS)
 		{
