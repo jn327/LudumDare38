@@ -9,8 +9,8 @@ public class CameraController : MonoBehaviour
 	private Vector3 _targetOffset = new Vector3(0,0,-10);
 	private float _moveSpeed = 150;
 
-	private float _minOrthSize = 100;
-	private float _maxOrthSize = 500;
+	private float _minOrthSize = 250;
+	private float _maxOrthSize = 750;
 
 	private Camera _cam;
 	private float _scrollInput;
@@ -49,9 +49,9 @@ public class CameraController : MonoBehaviour
 			_camOrthSize = _maxOrthSize;
 		}
 
-		if (_cam.orthographicSize != _camOrthSize)
+		if (_cam.orthographicSize != (int)_camOrthSize)
 		{
-			_cam.orthographicSize = _camOrthSize;
+			_cam.orthographicSize = (int)_camOrthSize;
 
 			sendOrthSizeToTarget();
 		}

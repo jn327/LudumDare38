@@ -18,9 +18,9 @@ public class PlayerController : MonoBehaviour
 
 	private Rigidbody2D _rb2d;
 
-	public LevelGenerator levelGen;
-	private float _levelUpdateFreq = 0.5f;
-	private int _visibilityRange = 250;
+	private float _visibilityUpdateFreq = 0.25f;
+	private float _levelUpdateFreq = 1f;
+	private int _visibilityRange = 300;
 
 	private float _orthSizeScaleMultip = 8;
 	public AnimationCurve orthScaleCurve;
@@ -29,7 +29,8 @@ public class PlayerController : MonoBehaviour
 	{
 		_rb2d = GetComponent<Rigidbody2D>();
 
-		InvokeRepeating( "UpdateLevelVisibility", 0, _levelUpdateFreq);
+		InvokeRepeating( "UpdateSurroundingTiles", 0, _levelUpdateFreq);
+		InvokeRepeating( "UpdateLevelVisibility", 0, _visibilityUpdateFreq);
 	}
 
 	public void recieveCameraOrthSizeChange( float orthNormal )
@@ -41,12 +42,23 @@ public class PlayerController : MonoBehaviour
 		_maxSpeed = _minMaxSpeed + (orthNormal * _orthSizeMaxSpeedMultip);
 	}
 
+	void UpdateSurroundingTiles()
+	{
+		int xPos = (int)(transform.position.x);
+		int yPos = (int)(transform.position.y);
+
+		LevelGenerator.instance.checkPosForSectionsGeneration(xPos, yPos);
+	}
+
 	void UpdateLevelVisibility()
 	{
 		int xPos = (int)(transform.position.x);
 		int yPos = (int)(transform.position.y);
+		
 		int halfVisRange = (int)(_visibilityRange*0.5f);
 		Vector2 pos;
+
+		//TODO: Maybe we can put these in a list in start and just loop through later.
 		for (int x = -halfVisRange; x < halfVisRange; x++)
 		{
 			for (int y = -halfVisRange; y < halfVisRange; y++)
@@ -54,7 +66,7 @@ public class PlayerController : MonoBehaviour
 				pos = new Vector2(xPos+x, yPos+y);
 				if (Vector2.Distance(pos, new Vector2(xPos, yPos)) < halfVisRange)
 				{
-					levelGen.RevealMapForPosition(xPos+x, yPos+y);
+					LevelGenerator.instance.RevealMapForPosition(xPos+x, yPos+y);
 				}
 			}
 		}

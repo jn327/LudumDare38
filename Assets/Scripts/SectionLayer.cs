@@ -20,7 +20,8 @@ public class SectionLayer : MonoBehaviour
 
 	public void init( int mapIndex )
 	{
-		_texture = new Texture2D(LevelGenerator.SECTION_WIDTH, LevelGenerator.SECTION_HEIGHT, TextureFormat.RGBA32, true);
+		_texture = new Texture2D(LevelGenerator.SECTION_WIDTH, LevelGenerator.SECTION_HEIGHT, TextureFormat.RGBA4444, true);
+		_texture.filterMode = FilterMode.Trilinear;
 
 		//_spriteRenderer = GetComponent<SpriteRenderer>();
 		//_spriteRenderer.sprite = Sprite.Create (_texture, new Rect(0,0,LevelGenerator.SECTION_WIDTH,LevelGenerator.SECTION_HEIGHT), new Vector2(0,0), 1);
@@ -31,7 +32,7 @@ public class SectionLayer : MonoBehaviour
 
 		_meshRenderer = GetComponent<MeshRenderer>();
 		_meshRenderer.material.mainTexture = _texture as Texture;
-		_meshRenderer.material.color = _materialStartColor;
+		_meshRenderer.material.color = _materialStartColor; //Camera.main.backgroundColor;
 
 
 		levelPositions = new LevelPosition[LevelGenerator.SECTION_WIDTH,LevelGenerator.SECTION_HEIGHT];
@@ -65,6 +66,9 @@ public class SectionLayer : MonoBehaviour
 	{
 		_texture.SetPixel(x, y, _clearColor);
 		_validateTexture = true;
+
+		//TODO: Some bool that says that this one can be pooled, add it to a list and then use it later on when creating a new one, 
+		// if the distance is far enough away....
 	}
 
 	public void ValidateTexture()

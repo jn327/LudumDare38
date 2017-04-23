@@ -38,7 +38,6 @@ public class LevelSection : MonoBehaviour
 
 	public void generateMap ( )
 	{
-		LevelPosition levelPos;
 		MapLayer mapLayer;
 		for (int x = 0; x < LevelGenerator.SECTION_WIDTH; x ++ )
 		{
