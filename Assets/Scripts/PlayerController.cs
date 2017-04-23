@@ -9,14 +9,21 @@ public class PlayerController : MonoBehaviour
 
 	private float _currVelocity;
 
-	private float _moveSpeed = 3;
-	private float _maxSpeed = 10;
+	private float _moveSpeed = 0;
+	private float _minMoveSpeed = 20;
+	private float _maxSpeed = 0;
+	private float _minMaxSpeed = 30;
+	private float _orthSizeMoveSpeedMultip = 100;
+	private float _orthSizeMaxSpeedMultip = 150;
 
 	private Rigidbody2D _rb2d;
 
 	public LevelGenerator levelGen;
 	private float _levelUpdateFreq = 0.5f;
-	public int visibilityRange = 25;
+	private int _visibilityRange = 250;
+
+	private float _orthSizeScaleMultip = 8;
+	public AnimationCurve orthScaleCurve;
 
 	void Start () 
 	{
@@ -25,11 +32,20 @@ public class PlayerController : MonoBehaviour
 		InvokeRepeating( "UpdateLevelVisibility", 0, _levelUpdateFreq);
 	}
 
+	public void recieveCameraOrthSizeChange( float orthNormal )
+	{
+		orthNormal = orthScaleCurve.Evaluate(orthNormal);
+		transform.localScale = Vector3.one + (new Vector3(orthNormal, orthNormal, 0) * _orthSizeScaleMultip);
+
+		_moveSpeed = _minMoveSpeed + (orthNormal * _orthSizeMoveSpeedMultip);
+		_maxSpeed = _minMaxSpeed + (orthNormal * _orthSizeMaxSpeedMultip);
+	}
+
 	void UpdateLevelVisibility()
 	{
 		int xPos = Mathf.FloorToInt(transform.position.x);
 		int yPos = Mathf.FloorToInt(transform.position.y);
-		int halfVisRange = Mathf.FloorToInt(visibilityRange*0.5f);
+		int halfVisRange = Mathf.FloorToInt(_visibilityRange*0.5f);
 		Vector2 pos;
 		for (int x = -halfVisRange; x < halfVisRange; x++)
 		{

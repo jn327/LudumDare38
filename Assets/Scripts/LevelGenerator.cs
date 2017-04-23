@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour 
 {
-	public const int LEVEL_WIDTH = 1024;
-	public const int LEVEL_HEIGHT = 1024;
+	public const int LEVEL_WIDTH = 2048;
+	public const int LEVEL_HEIGHT = 2048;
 
 	public static LevelGenerator instance;
 
@@ -27,7 +27,7 @@ public class LevelGenerator : MonoBehaviour
 	private MapLayer[] _mapLayers;
 
 	public GameObject playerPrefab;
-	private GameObject player;
+	private PlayerController player;
 
 	public CameraController camController;
 
@@ -59,14 +59,15 @@ public class LevelGenerator : MonoBehaviour
 		float normalY = 0.5f;
 		if (player == null)
 		{
-			player = Instantiate(playerPrefab, new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0), Quaternion.identity);
+			player = Instantiate(playerPrefab, new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0), Quaternion.identity).GetComponent<PlayerController>();
 		}
 		else
 		{
 			player.transform.position = new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0);
 		}
-		player.GetComponent<PlayerController>().levelGen = this;
-		camController.target = player.transform;
+		player.levelGen = this;
+		camController.target = player;
+		camController.sendOrthSizeToTarget();
 		camController.gameObject.transform.position = player.transform.position;
 
 		generateMap();
@@ -80,7 +81,10 @@ public class LevelGenerator : MonoBehaviour
 		//TODO: Maybe check this less frequently?
 		for (int i = 0; i < _mapLayers.Length; i++)
 		{
-			_mapLayers[i].UpdateTexture();
+			if (_mapLayers[i].isActiveAndEnabled)
+			{
+				_mapLayers[i].UpdateTexture();
+			}
 		}
 	}
 
@@ -97,7 +101,7 @@ public class LevelGenerator : MonoBehaviour
 				{
 					levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
 
-					if (_mapLayers[i].revealAtStart == true)
+					if (_mapLayers[i].revealAtStart == true && _mapLayers[i].isActiveAndEnabled)
 					{
 						_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
 					}
@@ -120,7 +124,7 @@ public class LevelGenerator : MonoBehaviour
 		if (x >= LEVEL_WIDTH || y >= LEVEL_HEIGHT
 			|| x < 0 || y < 0 ) 
 		{
-			Debug.Log("no map to show at "+x+", "+y); 
+			//Debug.Log("no map to show at "+x+", "+y); 
 			return;
 		}
 

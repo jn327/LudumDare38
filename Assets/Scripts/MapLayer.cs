@@ -29,6 +29,11 @@ public class MapLayer : MonoBehaviour
 		_spriteRenderer.material.name = name + "_sprite";
 		_spriteRenderer.material.mainTexture = _texture as Texture;
 		_spriteRenderer.material.shader = Shader.Find ("Sprites/Default");
+
+		for (int i = 0; i < curveValues.Length; i++)
+		{
+			curveValues[i].init();
+		}
 	}
 
 	public float GenerateValueForPos( int x, int y )
@@ -86,54 +91,81 @@ public class PositionValueWeight
 {
 	public string name;
 
-	public enum TYPES {NONE, RANDOM, PERLIN, SINX, SINY, COSX, COSY, XPOS, YPOS };
+	public enum TYPES {NONE, RANDOM, PERLIN, SINX, SINY, COSX, COSY, XPOS, YPOS, PERLINYPOS, PERLINXPOS };
 	public TYPES initializationType;
 	[Range(0,1)]
 	public float weighting = 1; //normalized value 0-1;
 	public AnimationCurve curve = AnimationCurve.Linear(0,0,1,1);
 	public MapLayer otherLayerVal;
 
-	public float perlinNoiseScale = 1;
+	private float _perlinNoiseScale;
+	public float perlinNoiseScaleMin = 1;
+	public float perlinNoiseScaleMax = 1;
 	public float perlinXOrg = 0;
 	public float perlinYOrg = 0;
 
 	public enum OPERATION_TYPES {ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION };
 	public OPERATION_TYPES operationType;
 
+	public void init()
+	{
+		_perlinNoiseScale = Random.Range(perlinNoiseScaleMin, perlinNoiseScaleMax);
+	}
+
 	public float getValForType( int x, int y )
 	{
 		float curveVal = 0;
 
-		switch (initializationType)
+		if (initializationType == TYPES.NONE)
 		{
-		case TYPES.NONE:
-			break;
-		case TYPES.RANDOM:
+		}
+		else if (initializationType == TYPES.RANDOM)
+		{
 			curveVal += Random.value;
-			break;
-		case TYPES.PERLIN:
-			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * perlinNoiseScale);
-			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * perlinNoiseScale);
+		}
+		else if (initializationType == TYPES.PERLIN)
+		{
+			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
+			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
 			curveVal += Mathf.PerlinNoise(xCoord, yCoord);
-			break;
-		case TYPES.SINX:
+		}
+		else if (initializationType == TYPES.SINX)
+		{
 			curveVal += Mathf.Sin(x);
-			break;
-		case TYPES.SINY:
+		}
+		else if (initializationType == TYPES.SINY)
+		{
 			curveVal += Mathf.Sin(y);
-			break;
-		case TYPES.COSX:
+		}
+		else if (initializationType == TYPES.COSX)
+		{
 			curveVal += Mathf.Cos(x);
-			break;
-		case TYPES.COSY:
+		}
+		else if (initializationType == TYPES.COSY)
+		{
 			curveVal += Mathf.Cos(y);
-			break;
-		case TYPES.XPOS:
+		}
+		else if (initializationType == TYPES.XPOS)
+		{
 			curveVal += (float)x/(float)LevelGenerator.LEVEL_WIDTH;
-			break;
-		case TYPES.YPOS:
+		}
+		else if (initializationType == TYPES.YPOS)
+		{
 			curveVal += (float)y/(float)LevelGenerator.LEVEL_HEIGHT;
-			break;
+		}
+		else if (initializationType == TYPES.PERLINXPOS)
+		{
+			curveVal += curve.Evaluate((float)x/(float)LevelGenerator.LEVEL_WIDTH);
+			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
+			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
+			curveVal *= Mathf.PerlinNoise(xCoord, yCoord);
+		}
+		else if (initializationType == TYPES.PERLINYPOS)
+		{
+			float xCoord = perlinXOrg + (((float)x / (float)LevelGenerator.LEVEL_WIDTH) * _perlinNoiseScale);
+			float yCoord = perlinYOrg + (((float)y / (float)LevelGenerator.LEVEL_HEIGHT) * _perlinNoiseScale);
+			curveVal += Mathf.PerlinNoise(yCoord, xCoord);
+			curveVal *= curve.Evaluate((float)y/(float)LevelGenerator.LEVEL_HEIGHT);
 		}
 
 		if (otherLayerVal != null)
@@ -141,7 +173,10 @@ public class PositionValueWeight
 			curveVal += LevelGenerator.instance.getMapLayerValueAtPos( x, y, otherLayerVal.index );
 		}
 
-		curveVal = curve.Evaluate(curveVal);
+		if (initializationType != TYPES.PERLINYPOS && initializationType != TYPES.PERLINXPOS)
+		{
+			curveVal = curve.Evaluate(curveVal);
+		}
 		curveVal *= weighting;
 		return curveVal;
 	}

@@ -4,20 +4,20 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour 
 {
-	public Transform target;
+	public PlayerController target;
 
 	private Vector3 _targetOffset = new Vector3(0,0,-10);
-	private float _moveSpeed = 12;
+	private float _moveSpeed = 150;
 
-	private float _minOrthSize = 5;
-	private float _maxOrthSize = 50;
+	private float _minOrthSize = 100;
+	private float _maxOrthSize = 500;
 
 	private Camera _cam;
 	private float _scrollInput;
 	private float _camOrthSize;
-	private float _camZoomSpeed = 10;
+	private float _camZoomSpeed = 500;
 
-	void Start () 
+	void Awake () 
 	{
 		_cam = GetComponent<Camera>();
 	}
@@ -35,6 +35,7 @@ public class CameraController : MonoBehaviour
 	void UpdateCameraZoom()
 	{
 		_scrollInput = Input.GetAxis("Mouse ScrollWheel");
+
 		_camOrthSize = _cam.orthographicSize;
 		_camOrthSize += _scrollInput * Time.deltaTime * _camZoomSpeed;
 
@@ -48,6 +49,20 @@ public class CameraController : MonoBehaviour
 			_camOrthSize = _maxOrthSize;
 		}
 
-		_cam.orthographicSize = _camOrthSize;
+		if (_cam.orthographicSize != _camOrthSize)
+		{
+			_cam.orthographicSize = _camOrthSize;
+
+			sendOrthSizeToTarget();
+		}
+	}
+
+	public void sendOrthSizeToTarget()
+	{
+		if (target != null)
+		{
+			float orthSizeNormal = ((_cam.orthographicSize-_minOrthSize) / (_maxOrthSize-_minOrthSize));
+			target.recieveCameraOrthSizeChange(orthSizeNormal);
+		}
 	}
 }
