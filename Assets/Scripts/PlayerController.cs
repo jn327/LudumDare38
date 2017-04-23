@@ -18,7 +18,6 @@ public class PlayerController : MonoBehaviour
 
 	private Rigidbody2D _rb2d;
 
-	public LevelGenerator levelGen;
 	private float _levelUpdateFreq = 0.5f;
 	private int _visibilityRange = 250;
 
@@ -47,6 +46,7 @@ public class PlayerController : MonoBehaviour
 		int yPos = Mathf.FloorToInt(transform.position.y);
 		int halfVisRange = Mathf.FloorToInt(_visibilityRange*0.5f);
 		Vector2 pos;
+		//TODO: maybe i can cache these in a list and loop through them faster?
 		for (int x = -halfVisRange; x < halfVisRange; x++)
 		{
 			for (int y = -halfVisRange; y < halfVisRange; y++)
@@ -54,7 +54,7 @@ public class PlayerController : MonoBehaviour
 				pos = new Vector2(xPos+x, yPos+y);
 				if (Vector2.Distance(pos, new Vector2(xPos, yPos)) < halfVisRange)
 				{
-					levelGen.RevealMapForPosition(xPos+x, yPos+y);
+					LevelGenerator.instance.RevealMapForPosition(xPos+x, yPos+y);
 				}
 			}
 		}

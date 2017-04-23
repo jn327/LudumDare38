@@ -65,7 +65,6 @@ public class LevelGenerator : MonoBehaviour
 		{
 			player.transform.position = new Vector3(LEVEL_WIDTH*normalX, LEVEL_HEIGHT*normalY, 0);
 		}
-		player.levelGen = this;
 		camController.target = player;
 		camController.sendOrthSizeToTarget();
 		camController.gameObject.transform.position = player.transform.position;
@@ -101,10 +100,9 @@ public class LevelGenerator : MonoBehaviour
 				{
 					if (_mapLayers[i].isActiveAndEnabled)
 					{
-						levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
-
 						if (_mapLayers[i].revealAtStart == true)
 						{
+							levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
 							_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
 						}
 						else
@@ -141,8 +139,12 @@ public class LevelGenerator : MonoBehaviour
 
 		for (int i = 0; i < _mapLayers.Length; i++)
 		{
-			//TODO: ART: DRAW A LINE OR a sea pixel or SOMETHING !!!!
-			_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
+			if (_mapLayers[i].isActiveAndEnabled && _mapLayers[i].revealAtStart != true)
+			{
+				//TODO: ART: DRAW A LINE OR a sea pixel or SOMETHING !!!!
+				levelPos.layerValues[i] = _mapLayers[i].GenerateValueForPos(x, y);
+				_mapLayers[i].setTextureForLevelPos( levelPos.layerValues[i], x, y );
+			}
 		}
 	}
 }
